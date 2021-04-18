@@ -3,76 +3,116 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class BlackJackController implements ActionListener {
-    private BlackJack game;
+    private BlackJackModel model;
     private BlackJackView view;
 
-
     public BlackJackController() {
-        this.game = new BlackJack();
-        this.view = new BlackJackView();
-        registerListeners();
-        init();
-    }
-
-    public void init() {
-        // beginning of game
-        System.out.println(game.getCardFromPlayer(0));
-        view.addCardToPanel(game.getCardFromPlayer(0), view.getPlayerPanel());
-        view.addCardToPanel(game.getCardFromPlayer(1), view.getPlayerPanel());
-        view.addCardToPanel(game.getCardFromDealer(0), view.getDealerPanel());
-        view.addCardToPanel(null, view.getDealerPanel());
+        model = new BlackJackModel();
+        view = new BlackJackView();
+        initController();
+        initGame();
         view.setVisible(true);
     }
 
-
-    public void registerListeners() {
+    /**
+     * Registers this class to be the listener of the buttons.
+     */
+    public void initController() {
         view.getHitButton().addActionListener(this);
         view.getStandButton().addActionListener(this);
+        view.getRestartButton().addActionListener(this);
     }
-
 
     /**
-     * Invoked when an action occurs.
-     *
-     * @param e the event to be processed
+     * Displays the cards in the beginning, based on the game.
+     * The second card of the dealer is hidden.
      */
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        JButton button = (JButton) e.getSource();
-        if (game.isGameOver()) {
-            return;
-        }
-
-        if (button.equals(view.getHitButton())) {
-            game.playerHit();
-        }
-
-
-        if (game.didPlayerBlackJack()) {
-            view.addMessage(new JLabel("Player Black Jack!"));
-        } else if (game.didDealerBlackJack()) {
-            view.addMessage(new JLabel("Dealer Black Jack!"));
-        } else if (game.didDealerBust()) {
-            view.addMessage(new JLabel("Dealer has busted!"));
-        } else if (game.didPlayerBust()) {
-            view.addMessage(new JLabel("Player has busted!"));
-        }
-
-        if (game.getWinner() != null) {
-            String result = String.format("%s won!", game.getWinner());
-            JLabel endingMessage = new JLabel(result);
-            view.addMessage(endingMessage);
-        }
-
+    public void initGame() {
+        view.addCardToPanel(model.getDealerHitCard(), view.getDealerPanel());
+        view.addFaceDownCardToPanel(view.getDealerPanel());
+        view.addCardToPanel(model.getPlayerHitCard(), view.getPlayerPanel());
+        view.addCardToPanel(model.getPlayerHitCard(), view.getPlayerPanel());
     }
 
+    /**
+     * Starts a new game with a new view.
+     */
+    public void startAgain() {
+        view.setVisible(false);
+        view = new BlackJackView();
+        model = new BlackJackModel();
+        this.initController();
+        this.initGame();
+        view.setVisible(true);
+    }
+
+    /**
+     * Displays game result in the message panel when game is over.
+     * Hides the hit and stand buttons and displays the restart button.
+     */
+    public void displayGameOver() {
+        String message = "";
+        if (model.isGameOver()) {
+            if (model.tieGame()){
+                view.setMessage("PUSH!");
+            }
+            else if (model.playerBust() || model.dealerBJ()){
+                String m = (model.dealerBJ())? "Dealer got BLACKJACK" : "You BUST";
+                view.setMessage(m + ", Dealer WON!");
+            }
+
+            else if (model.dealerBust() || model.playerBJ()){
+                String m = (model.playerBJ())?  "You got BLACKJACK" : "Dealer BUST";
+                view.setMessage(m +  ", You WON!");
+            }
+
+            else {
+                view.setMessage(model.getWinner() + " WON!");
+            }
+
+            // clean up buttons
+            view.getRestartButton().setVisible(true);
+            view.getStandButton().setVisible(false);
+            view.getHitButton().setVisible(false);
+        }
+    }
+
+
+    public void actionPerformed(ActionEvent e) {
+        JButton button = (JButton) e.getSource();
+
+        if (button.equals(view.getHitButton())) {
+            view.addCardToPanel(model.getPlayerHitCard(), view.getPlayerPanel());
+        }
+
+        if (model.playerBust() || model.playerBJ() || button.equals(view.getStandButton())) {
+            model.setPlayerStand();
+
+            // display all dealer's cards
+            view.removeFaceDownCard();
+            view.addCardToPanel(model.getDealerHitCard(), view.getDealerPanel());
+            view.setVisible(true);
+
+
+            // dealer starts playing
+            while (model.dealerCanHit()) {
+                view.addCardToPanel(model.getDealerHitCard(), view.getDealerPanel());
+            }
+            model.setDealerStand();
+        }
+
+        if (button.equals(view.getRestartButton())) {
+            startAgain();
+        }
+
+        displayGameOver();
+        view.setVisible(true);
+    }
 
     public static void main(String[] args) {
         BlackJackController c = new BlackJackController();
-
-
     }
 
 
-
 }
+

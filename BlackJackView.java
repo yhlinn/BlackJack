@@ -4,15 +4,19 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.File;
-import java.util.StringJoiner;
+import java.nio.file.Paths;
 
-public class BlackJackView extends JFrame {
+public class BlackJackView extends JFrame{
     private JPanel dealerPanel;
     private JPanel playerPanel;
     private JPanel messagePanel;
-    private JButton hitButton, standButton;
-    private JLabel message;
+    private JButton hitButton = new JButton("HIT");
+    private JButton standButton = new JButton("STAND");
+    private JButton restartButton = new JButton("RESTART");
+    private JLabel message = new JLabel("");
     private JPanel[][] panelHolder;
+    private JLabel faceDownCard;
+    public final String myPath = Paths.get("").toAbsolutePath().toString() + "/src/resources/";
 
     public BlackJackView() {
         super("Black Jack");
@@ -22,11 +26,9 @@ public class BlackJackView extends JFrame {
         addPlayerPanel();
         addMessagePanel();
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        setVisible(true);
     }
 
-
-    public void addMessagePanel() {
+    private void addMessagePanel() {
         panelHolder = new JPanel[2][3];
         messagePanel = new JPanel(new GridLayout(2, 3));
 
@@ -36,50 +38,55 @@ public class BlackJackView extends JFrame {
                 messagePanel.add(panelHolder[i][j]);
             }
         }
-        message = new JLabel("Message");
-        hitButton = new JButton("HIT");
-        standButton = new JButton("STAND");
 
+        message.setFont(new Font("American Typewriter", Font.PLAIN, 26));
+
+        panelHolder[0][1].add(restartButton);
+        restartButton.setVisible(false);
         panelHolder[1][1].add(message);
         panelHolder[1][0].add(hitButton);
         panelHolder[1][2].add(standButton);
-
-        hitButton.setSize(20, 20);
-        standButton.setSize(20, 20);
+        hitButton.setFont(new Font("Ariel", Font.PLAIN, 24));
+        standButton.setFont(new Font("Ariel", Font.PLAIN, 24));
+        restartButton.setFont(new Font("Ariel", Font.PLAIN, 24));
 
         add(messagePanel, BorderLayout.CENTER);
     }
 
-    public void addMessage(Component component) {
-        panelHolder[1][1].remove(message);
-        panelHolder[1][1].add(component);
-    }
-
-
-    public void addPlayerPanel()  {
+    private void addPlayerPanel() {
         playerPanel = new JPanel(new FlowLayout());
         add(playerPanel, BorderLayout.SOUTH);
     }
 
-    public void addDealerPanel() {
+    private void addDealerPanel() {
         dealerPanel = new JPanel(new FlowLayout());
         add(dealerPanel, BorderLayout.NORTH);
     }
 
-    public void addCardToPanel(Card newCard, JPanel panel){
+    public void setMessage(String s) {
+        message.setText(s);
+    }
+
+    /**
+     * Adds the appropriate card image based on the given {@link Card} to the
+     * given panel. If {@code null} is passed in as the card, a face down
+     * card will be added to the panel.
+     *
+     * @param newCard the card to be displayed
+     * @param panel the panel where the card is added
+     */
+    public void addCardToPanel(Card newCard, JPanel panel) {
         String imageName;
-        String myPath = "/Users/yuhsuanlin/Documents/cs5004/hw/hw08/src/resources/";
 
         if (newCard == null) {
             imageName = "blue_back";
-        }
-        else {
+        } else {
             char suitFirstLetter = newCard.getSuit().toString().charAt(0);
 
-            if (newCard.getName().getValue() == 1 || newCard.getName().getValue() > 10) {
+            if (newCard.getName().number() == 1 || newCard.getName().number() > 10) {
                 imageName = String.format("%c%c", newCard.getName().toString().charAt(0), suitFirstLetter);
             } else {
-                imageName = String.format("%d%c", newCard.getName().getValue(), suitFirstLetter);
+                imageName = String.format("%d%c", newCard.getName().number(), suitFirstLetter);
             }
         }
 
@@ -93,7 +100,23 @@ public class BlackJackView extends JFrame {
         }
     }
 
+    /**
+     * Adds a face down card to the given panel.
+     * @param panel the panel that the face down card is added to
+     */
+    public void addFaceDownCardToPanel(JPanel panel) {
+        try {
+            BufferedImage faceDownImage = ImageIO.read(new File(myPath + "blue_back.png"));
+            faceDownCard = new JLabel(new ImageIcon(faceDownImage));
+            panel.add(faceDownCard);
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+    }
 
+    public void removeFaceDownCard() {
+        dealerPanel.remove(faceDownCard);
+    }
 
     public JPanel getDealerPanel() {
         return this.dealerPanel;
@@ -103,12 +126,6 @@ public class BlackJackView extends JFrame {
         return this.playerPanel;
     }
 
-    public JPanel getMessagePanel() {
-        return this.messagePanel;
-    }
-
-
-
     public JButton getHitButton() {
         return hitButton;
     }
@@ -117,12 +134,9 @@ public class BlackJackView extends JFrame {
         return standButton;
     }
 
-
-
-
-    public static void main(String[] args) throws IOException {
-        BlackJackView view = new BlackJackView();
+    public JButton getRestartButton() {
+        return restartButton;
     }
 
-
 }
+
